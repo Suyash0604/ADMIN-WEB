@@ -1,14 +1,14 @@
 import { SearchX } from "lucide-react";
-import { entities, serviceOrder } from "../data/schema";
+import { entities, serviceOrder } from "../../data/schema";
 import EntityCard from "./EntityCard";
 import FeatureCard from "./FeatureCard";
 
 const SectionHeader = ({ service, count }) => (
   <div className="mb-3 flex items-center gap-3">
-    <h2 className="text-sm font-bold uppercase tracking-wide text-neutral-500">
+    <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-900 dark:text-neutral-400">
       {service}
     </h2>
-    <span className="text-xs font-semibold text-neutral-400">{count}</span>
+    <span className="text-xs font-semibold text-zinc-900 dark:text-neutral-500">{count}</span>
     <span className="h-px flex-1 bg-hairline" />
   </div>
 );
@@ -28,9 +28,9 @@ const EntityGrid = ({ search = "" }) => {
   if (filtered.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-hairline bg-surface/60 py-16 text-center">
-        <SearchX size={28} strokeWidth={2} className="text-neutral-300" />
+        <SearchX size={28} strokeWidth={2} className="text-neutral-300 dark:text-neutral-600" />
         <p className="mt-3 text-sm font-semibold text-ink">No records match</p>
-        <p className="mt-1 text-xs font-medium text-neutral-400">
+        <p className="mt-1 text-xs font-medium text-zinc-900 dark:text-neutral-400">
           Try a different search term.
         </p>
       </div>
@@ -45,7 +45,7 @@ const EntityGrid = ({ search = "" }) => {
 
         const feature = isSearching
           ? null
-          : group.find((e) => e.featured) ?? null;
+          : (group.find((e) => e.featured) ?? null);
         const small = feature ? group.filter((e) => e !== feature) : group;
         const featureLeft = idx % 2 === 0;
 

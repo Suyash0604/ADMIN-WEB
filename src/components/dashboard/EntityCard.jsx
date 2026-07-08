@@ -10,8 +10,10 @@ const EntityCard = ({ entity }) => {
         <Icon size={20} strokeWidth={2.1} />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-bold text-ink">{label}</span>
-        <span className="mt-1 inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-neutral-500">
+        <span className="block truncate text-sm font-bold text-brand">
+          {label}
+        </span>
+        <span className="mt-1 inline-flex items-center rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-900 dark:bg-white/10 dark:text-neutral-300">
           {records} {records === 1 ? "record" : "records"}
         </span>
       </span>
