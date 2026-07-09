@@ -23,6 +23,7 @@ export const login = async (email, password) => {
     client_id: data?.client_id,
     designations: data?.designations ?? [],
     roles: data?.roles ?? [],
+    is_superuser: Boolean(data?.is_superuser),
   });
 
   return data;

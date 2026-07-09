@@ -1,5 +1,6 @@
 import { SearchX } from "lucide-react";
-import { entities, serviceOrder } from "../../data/schema";
+import { entities, serviceOrder, clientNavGroups } from "../../data/schema";
+import { useAuth } from "../../context/AuthContext";
 import EntityCard from "./EntityCard";
 import FeatureCard from "./FeatureCard";
 
@@ -13,17 +14,27 @@ const SectionHeader = ({ service, count }) => (
   </div>
 );
 
+const GroupHeader = ({ label }) => (
+  <h3 className="col-span-full mb-1 mt-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-zinc-900/50 dark:text-neutral-500">
+    {label}
+  </h3>
+);
+
 const EntityGrid = ({ search = "" }) => {
+  const { canAccessEntity } = useAuth();
   const query = search.trim().toLowerCase();
   const isSearching = query.length > 0;
 
+  const accessibleEntities = entities.filter((entity) => canAccessEntity(entity.key));
+
   const filtered = isSearching
-    ? entities.filter(
+    ? accessibleEntities.filter(
         (e) =>
           e.label.toLowerCase().includes(query) ||
-          e.service.toLowerCase().includes(query),
+          e.service.toLowerCase().includes(query) ||
+          e.clientGroup?.toLowerCase().includes(query),
       )
-    : entities;
+    : accessibleEntities;
 
   if (filtered.length === 0) {
     return (
@@ -37,37 +48,84 @@ const EntityGrid = ({ search = "" }) => {
     );
   }
 
+  const renderEntityCards = (items) =>
+    items.map((entity) => <EntityCard key={entity.key} entity={entity} />);
+
+  const renderClientSection = (group, feature) => {
+    const small = feature ? group.filter((e) => e !== feature) : group;
+    const clients = small.filter((e) => e.key === "clients");
+    const grouped = clientNavGroups
+      .filter((navGroup) => navGroup.key !== "client-config")
+      .map((navGroup) => ({
+        ...navGroup,
+        items: small.filter((e) => navGroup.keys.includes(e.key)),
+      }));
+
+    if (feature) {
+      return (
+        <div className="grid items-stretch gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-1">
+            <FeatureCard entity={feature} />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-2">
+            {renderEntityCards(clients)}
+            {grouped.map(
+              (navGroup) =>
+                navGroup.items.length > 0 && (
+                  <div key={navGroup.key} className="col-span-full grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <GroupHeader label={navGroup.label} />
+                    {renderEntityCards(navGroup.items)}
+                  </div>
+                ),
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {renderEntityCards(clients)}
+        {grouped.map(
+          (navGroup) =>
+            navGroup.items.length > 0 && (
+              <div key={navGroup.key} className="contents">
+                <GroupHeader label={navGroup.label} />
+                {renderEntityCards(navGroup.items)}
+              </div>
+            ),
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col gap-8">
       {serviceOrder.map((service, idx) => {
         const group = filtered.filter((e) => e.service === service);
         if (group.length === 0) return null;
 
-        const feature = isSearching
-          ? null
-          : (group.find((e) => e.featured) ?? null);
-        const small = feature ? group.filter((e) => e !== feature) : group;
-        const featureLeft = idx % 2 === 0;
+        const feature = isSearching ? null : (group.find((e) => e.featured) ?? null);
 
         return (
           <section key={service}>
             <SectionHeader service={service} count={group.length} />
 
-            {feature ? (
+            {service === "Client service" ? (
+              renderClientSection(group, feature)
+            ) : feature ? (
               <div className="grid items-stretch gap-4 lg:grid-cols-3">
-                {featureLeft && (
+                {idx % 2 === 0 && (
                   <div className="lg:col-span-1">
                     <FeatureCard entity={feature} />
                   </div>
                 )}
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:col-span-2">
-                  {small.map((entity) => (
-                    <EntityCard key={entity.key} entity={entity} />
-                  ))}
+                  {renderEntityCards(group.filter((e) => e !== feature))}
                 </div>
 
-                {!featureLeft && (
+                {idx % 2 !== 0 && (
                   <div className="lg:col-span-1">
                     <FeatureCard entity={feature} />
                   </div>
@@ -75,9 +133,7 @@ const EntityGrid = ({ search = "" }) => {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {group.map((entity) => (
-                  <EntityCard key={entity.key} entity={entity} />
-                ))}
+                {renderEntityCards(group)}
               </div>
             )}
           </section>

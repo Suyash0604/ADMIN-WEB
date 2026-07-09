@@ -1,3 +1,4 @@
+import axios from "axios";
 import { API_BASE_URL } from "../lib/constants";
 import { getToken } from "../lib/storage";
 
@@ -21,51 +22,96 @@ const resolveErrorMessage = (data, status) => {
   return "Something went wrong. Please try again.";
 };
 
+/** Shared axios instance — auth + error normalization applied via interceptors. */
+export const http = axios.create({
+  headers: { "Content-Type": "application/json" },
+});
+
+http.interceptors.request.use((config) => {
+  if (config.auth !== false) {
+    const token = getToken();
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  if (config.data instanceof FormData) {
+    // Drop default JSON content-type so the browser sets multipart boundary.
+    if (typeof config.headers?.delete === "function") {
+      config.headers.delete("Content-Type");
+    } else if (config.headers) {
+      delete config.headers["Content-Type"];
+    }
+  }
+  return config;
+});
+
+http.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!axios.isAxiosError(error)) return Promise.reject(error);
+
+    if (axios.isCancel(error) || error.code === "ERR_CANCELED") {
+      return Promise.reject(error);
+    }
+
+    if (error.response) {
+      const { status, data } = error.response;
+      return Promise.reject(
+        new ApiError(resolveErrorMessage(data, status), status, data),
+      );
+    }
+
+    if (error.request) {
+      return Promise.reject(
+        new ApiError(
+          "Unable to reach the server. Check your connection and try again.",
+        ),
+      );
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 /**
- * Core request helper. Handles base URL, JSON (de)serialization,
- * bearer-token injection and normalized error handling.
+ * Thin wrapper kept for backward compatibility with resource factories.
+ * Supports JSON, FormData, and URLSearchParams bodies.
  */
 export const request = async (
   path,
-  { method = "GET", body, auth = true, headers } = {},
+  {
+    method = "GET",
+    body,
+    auth = true,
+    headers,
+    baseUrl = API_BASE_URL,
+    params,
+    signal,
+  } = {},
 ) => {
-  const options = {
+  const isFormData = body instanceof FormData;
+  const isUrlEncoded = body instanceof URLSearchParams;
+
+  const config = {
     method,
-    headers: { "Content-Type": "application/json", ...headers },
+    url: path,
+    baseURL: baseUrl,
+    auth,
+    headers: { ...headers },
   };
 
-  if (auth) {
-    const token = getToken();
-    if (token) options.headers.Authorization = `Bearer ${token}`;
+  if (params !== undefined) config.params = params;
+  if (signal) config.signal = signal;
+
+  if (body !== undefined) config.data = body;
+
+  if (isFormData) {
+    // Let axios set the multipart boundary automatically.
+    delete config.headers["Content-Type"];
+  } else if (isUrlEncoded) {
+    config.headers["Content-Type"] = "application/x-www-form-urlencoded";
   }
 
-  if (body !== undefined) options.body = JSON.stringify(body);
-
-  let response;
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, options);
-  } catch {
-    throw new ApiError(
-      "Unable to reach the server. Check your connection and try again.",
-    );
-  }
-
-  let data = null;
-  try {
-    data = await response.json();
-  } catch {
-    data = null;
-  }
-
-  if (!response.ok) {
-    throw new ApiError(
-      resolveErrorMessage(data, response.status),
-      response.status,
-      data,
-    );
-  }
-
-  return data;
+  const response = await http.request(config);
+  return response.data;
 };
 
 export const apiClient = {
@@ -74,5 +120,7 @@ export const apiClient = {
     request(path, { ...options, method: "POST", body }),
   put: (path, body, options) =>
     request(path, { ...options, method: "PUT", body }),
+  patch: (path, body, options) =>
+    request(path, { ...options, method: "PATCH", body }),
   del: (path, options) => request(path, { ...options, method: "DELETE" }),
 };

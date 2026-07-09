@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "../ui/ThemeToggle";
 import { useAuth } from "../../context/AuthContext";
+import { useClientContext } from "../../context/ClientContext";
 
 const getInitials = (name) => {
   if (!name) return "SA";
@@ -18,8 +19,9 @@ const getInitials = (name) => {
   return (first + last).toUpperCase() || "SA";
 };
 
-const Topbar = ({ search, onSearchChange, collapsed, onToggleSidebar }) => {
-  const { user, logout } = useAuth();
+const Topbar = ({ title = "Overview", search, onSearchChange, collapsed, onToggleSidebar }) => {
+  const { user, logout, accessLabel, isClientOnboardingUser } = useAuth();
+  const { selectedClient } = useClientContext();
   const [menuOpen, setMenuOpen] = useState(false);
   const displayName = user?.name || "Super Admin";
   const displayEmail = user?.email || "admin@platformv3.com";
@@ -32,7 +34,11 @@ const Topbar = ({ search, onSearchChange, collapsed, onToggleSidebar }) => {
         </div>
         <div className="hidden leading-tight sm:block">
           <p className="text-sm font-bold text-ink">PlatformV3</p>
-          <p className="text-[11px] font-medium text-zinc-900 dark:text-neutral-400">Super Admin</p>
+          <p className="text-[11px] font-medium text-zinc-900 dark:text-neutral-400">
+            {selectedClient
+              ? `${accessLabel} · ${selectedClient.name || `Client #${selectedClient.client_id}`}`
+              : accessLabel}
+          </p>
         </div>
       </div>
 
@@ -51,22 +57,26 @@ const Topbar = ({ search, onSearchChange, collapsed, onToggleSidebar }) => {
 
       <div className="hidden items-center gap-2 sm:flex">
         <span className="h-5 w-px bg-hairline" />
-        <span className="text-sm font-semibold text-ink">Overview</span>
+        <span className="text-sm font-semibold text-ink">{title}</span>
       </div>
 
       <div className="relative ml-auto">
-        <Search
-          size={17}
-          strokeWidth={2.2}
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-900 dark:text-neutral-400"
-        />
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search records"
-          className="h-10 w-56 rounded-lg border border-hairline bg-canvas pl-10 pr-3 text-sm font-medium text-ink outline-none transition placeholder:text-zinc-900 dark:placeholder:text-neutral-500 focus:w-72 focus:border-brand/40 focus:bg-surface focus:ring-2 focus:ring-brand/15"
-        />
+        {!isClientOnboardingUser && (
+          <>
+            <Search
+              size={17}
+              strokeWidth={2.2}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-900 dark:text-neutral-400"
+            />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search records"
+              className="h-10 w-56 rounded-lg border border-hairline bg-canvas pl-10 pr-3 text-sm font-medium text-ink outline-none transition placeholder:text-zinc-900 dark:placeholder:text-neutral-500 focus:w-72 focus:border-brand/40 focus:bg-surface focus:ring-2 focus:ring-brand/15"
+            />
+          </>
+        )}
       </div>
 
       <ThemeToggle />

@@ -59,12 +59,57 @@ export const entities = [
     featured: true,
     description: "Organizations onboarded and configured on the platform.",
   },
-  { key: "legalDocuments", label: "Legal Documents", records: 1, service: SERVICES.CLIENT, icon: FileText },
-  { key: "masterDocuments", label: "Master Documents", records: 1, service: SERVICES.CLIENT, icon: Files },
-  { key: "masterProducts", label: "Master Products", records: 1, service: SERVICES.CLIENT, icon: Package },
-  { key: "masterChannels", label: "Master Channels", records: 1, service: SERVICES.CLIENT, icon: Radio },
-  { key: "productChannels", label: "Product Channels", records: 1, service: SERVICES.CLIENT, icon: Cable },
-  { key: "callingConfig", label: "Calling Config", records: 1, service: SERVICES.CLIENT, icon: PhoneCall },
+  {
+    key: "masterDocuments",
+    label: "Master Documents",
+    navLabel: "Documents",
+    clientGroup: "Master Catalog",
+    records: 1,
+    service: SERVICES.CLIENT,
+    icon: Files,
+  },
+  {
+    key: "masterProducts",
+    label: "Master Products",
+    navLabel: "Products",
+    clientGroup: "Master Catalog",
+    records: 1,
+    service: SERVICES.CLIENT,
+    icon: Package,
+  },
+  {
+    key: "masterChannels",
+    label: "Master Channels",
+    navLabel: "Channels",
+    clientGroup: "Master Catalog",
+    records: 1,
+    service: SERVICES.CLIENT,
+    icon: Radio,
+  },
+  {
+    key: "legalDocuments",
+    label: "Legal Documents",
+    clientGroup: "Client Configuration",
+    records: 1,
+    service: SERVICES.CLIENT,
+    icon: FileText,
+  },
+  {
+    key: "productChannels",
+    label: "Product Channels",
+    clientGroup: "Client Configuration",
+    records: 1,
+    service: SERVICES.CLIENT,
+    icon: Cable,
+  },
+  {
+    key: "callingConfig",
+    label: "Calling Config",
+    clientGroup: "Client Configuration",
+    records: 1,
+    service: SERVICES.CLIENT,
+    icon: PhoneCall,
+  },
 
   {
     key: "providers",
@@ -83,4 +128,9 @@ export const entities = [
   { key: "languageTtsMap", label: "Language TTS Map", records: 1, service: SERVICES.AI, icon: GitCompareArrows },
 ];
 
-export const serviceOrder = [SERVICES.RBAC, SERVICES.CLIENT, SERVICES.AI];
+export const serviceOrder = [SERVICES.CLIENT, SERVICES.RBAC, SERVICES.AI];
+
+export const clientNavGroups = [
+  { key: "master-catalog", label: "Master Catalog", keys: ["masterDocuments", "masterProducts", "masterChannels"] },
+  { key: "client-config", label: "Client Configuration", keys: ["legalDocuments", "productChannels", "callingConfig"] },
+];

@@ -1,12 +1,18 @@
+import { useNavigate } from "react-router-dom";
 import { ArrowUpRight } from "lucide-react";
+import { routeForEntity } from "../../lib/navigation";
 
 const FeatureCard = ({ entity }) => {
-  const { label, records, description, icon: Icon } = entity;
+  const { key, label, records, description, icon: Icon } = entity;
+  const navigate = useNavigate();
+  const to = routeForEntity(key);
 
   return (
     <button
       type="button"
-      className="group flex h-full w-full flex-col justify-between rounded-2xl border border-brand/20 bg-brand/[0.06] p-5 text-left transition hover:-translate-y-0.5 hover:border-brand/40 hover:bg-brand/[0.09] hover:shadow-[0_12px_34px_rgba(44,160,163,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 dark:bg-brand/15"
+      onClick={() => to && navigate(to)}
+      disabled={!to}
+      className="group flex h-full w-full flex-col justify-between rounded-2xl border border-brand/20 bg-brand/[0.06] p-5 text-left transition hover:-translate-y-0.5 hover:border-brand/40 hover:bg-brand/[0.09] hover:shadow-[0_12px_34px_rgba(44,160,163,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-brand/15"
     >
       <div>
         <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-white shadow-sm">
@@ -27,12 +33,14 @@ const FeatureCard = ({ entity }) => {
           {records} {records === 1 ? "record" : "records"}
         </span>
         <span className="flex items-center gap-1 text-sm font-bold text-brand">
-          Manage
-          <ArrowUpRight
-            size={16}
-            strokeWidth={2.4}
-            className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-          />
+          {to ? "Manage" : "Coming soon"}
+          {to && (
+            <ArrowUpRight
+              size={16}
+              strokeWidth={2.4}
+              className="transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+            />
+          )}
         </span>
       </div>
     </button>

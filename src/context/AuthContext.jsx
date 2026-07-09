@@ -1,5 +1,14 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { login as loginRequest, logout as logoutRequest } from "../api/auth";
+import {
+  canAccessEntity,
+  canAccessRoute,
+  getAccessLabel,
+  getAccessProfile,
+  getDefaultRoute,
+  isClientOnboardingUser,
+  isRbacUser,
+} from "../lib/accessControl";
 import { getStoredUser, getToken } from "../lib/storage";
 
 const AuthContext = createContext(null);
@@ -24,7 +33,19 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isAuthenticated, login, logout }),
+    () => ({
+      user,
+      isAuthenticated,
+      login,
+      logout,
+      accessProfile: getAccessProfile(user),
+      isClientOnboardingUser: isClientOnboardingUser(user),
+      isRbacUser: isRbacUser(user),
+      accessLabel: getAccessLabel(user),
+      canAccessEntity: (entityKey) => canAccessEntity(entityKey, user),
+      canAccessRoute: (pathname) => canAccessRoute(pathname, user),
+      defaultRoute: getDefaultRoute(user),
+    }),
     [user, isAuthenticated, login, logout],
   );
 
