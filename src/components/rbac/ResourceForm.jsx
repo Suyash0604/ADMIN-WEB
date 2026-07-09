@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
@@ -16,6 +17,7 @@ import {
   TtsModelSelect,
 } from "../client/AiCatalogSelects";
 import { isNumericSelectType } from "../../lib/formFieldTypes";
+import { validateField, isTextNameField, sanitizeTextNameInput } from "../../lib/fieldValidation";
 import { UserSelect, DesignationSelect, BuLocationSelect } from "./RbacSelects";
 
 const resolveFieldValue = (field, record) => {
@@ -81,6 +83,11 @@ const ResourceForm = ({
   );
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+
+  const togglePasswordVisibility = (name) => {
+    setVisiblePasswords((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
 
   const setField = (name, value) => {
     setValues((prev) => ({ ...prev, [name]: value }));
@@ -90,36 +97,8 @@ const ResourceForm = ({
   const validate = () => {
     const nextErrors = {};
     formFields.forEach((field) => {
-      const raw = values[field.name];
-
-      if (field.type === "file") {
-        if (field.required && !isEdit && !(raw instanceof File)) {
-          nextErrors[field.name] = `${field.label} is required.`;
-        }
-        return;
-      }
-
-      if (field.type === "boolean") return;
-
-      const normalized = typeof raw === "string" ? raw.trim() : raw;
-      if (field.required && !normalized) {
-        nextErrors[field.name] = `${field.label} is required.`;
-        return;
-      }
-      if (
-        (field.type === "number" || isNumericSelectType(field.type)) &&
-        normalized &&
-        Number.isNaN(Number(normalized))
-      ) {
-        nextErrors[field.name] = `${field.label} must be a number.`;
-        return;
-      }
-      if (field.type === "phone" && normalized) {
-        const maxDigits = field.maxLength ?? 10;
-        if (normalized.length > maxDigits) {
-          nextErrors[field.name] = `${field.label} must be at most ${maxDigits} digits.`;
-        }
-      }
+      const message = validateField(field, values[field.name], { isEdit });
+      if (message) nextErrors[field.name] = message;
     });
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -381,7 +360,13 @@ const ResourceForm = ({
                     rows={field.rows ?? 4}
                     placeholder={field.placeholder}
                     value={values[field.name] ?? ""}
-                    onChange={(e) => setField(field.name, e.target.value)}
+                    onChange={(e) => {
+                      let next = e.target.value;
+                      if (isTextNameField(field)) {
+                        next = sanitizeTextNameInput(next);
+                      }
+                      setField(field.name, next);
+                    }}
                     className={[
                       "w-full rounded-xl border bg-canvas px-3.5 py-2.5 text-sm font-medium text-ink outline-none transition placeholder:text-zinc-900/45 dark:placeholder:text-neutral-500",
                       errors[field.name]
@@ -407,18 +392,72 @@ const ResourceForm = ({
                       )
                     }
                   />
+                ) : field.type === "password" ? (
+                  <div className="relative">
+                    <Input
+                      id={field.name}
+                      type={visiblePasswords[field.name] ? "text" : "password"}
+                      autoComplete="new-password"
+                      placeholder={field.placeholder ?? "Enter password"}
+                      value={values[field.name] ?? ""}
+                      invalid={Boolean(errors[field.name])}
+                      className="pr-11"
+                      onChange={(e) => setField(field.name, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility(field.name)}
+                      aria-label={
+                        visiblePasswords[field.name]
+                          ? "Hide password"
+                          : "Show password"
+                      }
+                      className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-zinc-900 transition hover:bg-neutral-100 hover:text-ink dark:text-neutral-400 dark:hover:bg-white/10"
+                    >
+                      {visiblePasswords[field.name] ? (
+                        <EyeOff size={16} strokeWidth={2.2} />
+                      ) : (
+                        <Eye size={16} strokeWidth={2.2} />
+                      )}
+                    </button>
+                  </div>
                 ) : (
                   <Input
                     id={field.name}
-                    type={field.type === "number" ? "text" : field.type}
-                    inputMode={field.type === "number" ? "numeric" : undefined}
+                    type={
+                      field.type === "number"
+                        ? "text"
+                        : field.type === "url"
+                          ? "url"
+                          : field.type
+                    }
+                    inputMode={
+                      field.type === "number"
+                        ? "numeric"
+                        : field.type === "phone"
+                          ? "numeric"
+                          : undefined
+                    }
+                    maxLength={field.maxLength}
                     autoComplete={
-                      field.type === "password" ? "new-password" : "off"
+                      field.type === "password"
+                        ? "new-password"
+                        : field.type === "email"
+                          ? "email"
+                          : "off"
                     }
                     placeholder={field.placeholder}
                     value={values[field.name] ?? ""}
                     invalid={Boolean(errors[field.name])}
-                    onChange={(e) => setField(field.name, e.target.value)}
+                    onChange={(e) => {
+                      let next = e.target.value;
+                      if (field.type === "number") {
+                        next = next.replace(/\D/g, "");
+                      } else if (isTextNameField(field)) {
+                        next = sanitizeTextNameInput(next);
+                      }
+                      setField(field.name, next);
+                    }}
                   />
                 ))}
               </FormField>

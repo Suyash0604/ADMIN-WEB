@@ -39,11 +39,42 @@ export const rbacResources = {
     idLabel: "User ID",
     ...rbacListFlags,
     fields: [
-      { name: "name", label: "Full name", type: "text", required: true, placeholder: "Jane Doe" },
-      { name: "email", label: "Email", type: "email", required: true, placeholder: "jane@company.com" },
-      { name: "phone_number", label: "Phone number", type: "phone", placeholder: "9876543210", maxLength: 10 },
-      { name: "password", label: "Password", type: "password", required: true, createOnly: true, help: "Set once at creation. Leave editing to a reset flow." },
-      { name: "reporting_manager_id", label: "Reporting manager", type: "user" },
+      {
+        name: "name",
+        label: "Full name",
+        type: "text",
+        required: true,
+        placeholder: "Enter full name",
+      },
+      {
+        name: "email",
+        label: "Email",
+        type: "email",
+        required: true,
+        placeholder: "name@company.com",
+      },
+      {
+        name: "phone_number",
+        label: "Phone number",
+        type: "phone",
+        placeholder: "10-digit mobile number",
+        maxLength: 10,
+      },
+      {
+        name: "password",
+        label: "Password",
+        type: "password",
+        required: true,
+        createOnly: true,
+        placeholder: "Create a secure password",
+        help: "Password is set at account creation only.",
+      },
+      {
+        name: "reporting_manager_id",
+        label: "Reporting manager",
+        type: "user",
+        placeholder: "Choose reporting manager",
+      },
       { name: "client_id", label: "Client", type: "client", clientDefault: true },
       {
         name: "designation_id",
@@ -51,6 +82,7 @@ export const rbacResources = {
         type: "designation",
         required: true,
         createOnly: true,
+        placeholder: "Choose designation",
       },
       {
         name: "location_id",
@@ -58,6 +90,7 @@ export const rbacResources = {
         type: "buLocation",
         required: true,
         createOnly: true,
+        placeholder: "Choose work location",
       },
     ],
     columns: [
