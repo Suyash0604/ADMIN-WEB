@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useOutletContext } from "react-router-dom";
 import { Plus, Search, Info } from "lucide-react";
 import { useResourceManager } from "../../hooks/useResourceManager";
 import { useToast } from "../../context/ToastContext";
@@ -13,11 +14,11 @@ import Input from "../ui/Input";
 import DataTable from "../ui/DataTable";
 import EmptyState from "../ui/EmptyState";
 import ConfirmDialog from "../ui/ConfirmDialog";
-import Spinner from "../ui/Spinner";
 import ResourceForm from "./ResourceForm";
 
 const ResourceManager = ({ resource }) => {
   const toast = useToast();
+  const { search = "" } = useOutletContext() ?? {};
   const { activeClientId, selectedClient } = useClientContext();
 
   const isClientScoped = CLIENT_SCOPED_ENTITIES.includes(resource.key);
@@ -28,12 +29,17 @@ const ResourceManager = ({ resource }) => {
     records,
     loading,
     syncing,
+    page,
+    pagination,
+    setPage,
     missingClientId,
     create,
     update,
     remove,
     fetchById,
-  } = useResourceManager(resource, activeClientId);
+  } = useResourceManager(resource, activeClientId, { search });
+
+  const isSearching = search.trim().length > 0;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -103,23 +109,13 @@ const ResourceManager = ({ resource }) => {
     return <SelectClientPrompt />;
   }
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 py-24">
-        <Spinner size={24} />
-        <p className="text-sm font-semibold text-zinc-900/70 dark:text-neutral-400">
-          Loading {resource.title.toLowerCase()}…
-        </p>
-      </div>
-    );
-  }
+  const tableLoading = loading || syncing;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         icon={resource.icon}
         title={resource.title}
-        description={resource.description}
         actions={
           <Button icon={Plus} onClick={openCreate}>
             {resource.createAction ?? `New ${resource.singular}`}
@@ -188,19 +184,57 @@ const ResourceManager = ({ resource }) => {
         </>
       )}
 
-      {records.length === 0 ? (
+      {resource.hasList ? (
+        records.length === 0 && !tableLoading ? (
+          <EmptyState
+            icon={isSearching ? Search : resource.icon}
+            title={isSearching ? "No records match" : `No ${resource.title.toLowerCase()} yet`}
+            description={
+              isSearching
+                ? "Try a different search term."
+                : `Create a new ${resource.singular.toLowerCase()} to get started.`
+            }
+            action={
+              isSearching ? undefined : (
+                <Button icon={Plus} onClick={openCreate}>
+                  {resource.createAction ?? `New ${resource.singular}`}
+                </Button>
+              )
+            }
+          />
+        ) : (
+          <DataTable
+            columns={resource.columns}
+            rows={records}
+            idKey={resource.idKey}
+            loading={tableLoading}
+            onEdit={openEdit}
+            onDelete={(row) => setDeleting(row)}
+            pagination={{
+              page,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              totalPages: pagination.totalPages,
+              onPageChange: setPage,
+              loading: tableLoading,
+            }}
+          />
+        )
+      ) : records.length === 0 ? (
         <EmptyState
-          icon={resource.icon}
-          title={`No ${resource.title.toLowerCase()} yet`}
+          icon={isSearching ? Search : resource.icon}
+          title={isSearching ? "No records match" : `No ${resource.title.toLowerCase()} yet`}
           description={
-            resource.hasList
-              ? `Create a new ${resource.singular.toLowerCase()} to get started.`
+            isSearching
+              ? "Try a different search term."
               : `Create a new ${resource.singular.toLowerCase()} or fetch an existing one by its ${resource.idLabel.toLowerCase()} to get started.`
           }
           action={
-            <Button icon={Plus} onClick={openCreate}>
-              {resource.createAction ?? `New ${resource.singular}`}
-            </Button>
+            isSearching ? undefined : (
+              <Button icon={Plus} onClick={openCreate}>
+                {resource.createAction ?? `New ${resource.singular}`}
+              </Button>
+            )
           }
         />
       ) : (
@@ -208,7 +242,7 @@ const ResourceManager = ({ resource }) => {
           columns={resource.columns}
           rows={records}
           idKey={resource.idKey}
-          loading={syncing}
+          loading={tableLoading}
           onEdit={openEdit}
           onDelete={(row) => setDeleting(row)}
         />

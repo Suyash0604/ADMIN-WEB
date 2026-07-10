@@ -137,23 +137,41 @@ const buildNavItems = (canAccessEntity, isClientOnboardingUser, isRbacUser) => {
 };
 
 const baseRow =
-  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition";
+  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition duration-150";
 const inactiveRow =
-  "text-zinc-900 hover:bg-neutral-100 hover:text-ink dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-ink";
-const activeRow = "bg-brand text-white";
+  "text-zinc-700 hover:bg-canvas/90 dark:text-neutral-300 dark:hover:bg-white/[0.06]";
+const activeLeafRow =
+  "bg-brand text-white shadow-[0_4px_14px_rgba(44,119,163,0.28)]";
+const activeParentRow =
+  "bg-brand/10 text-brand ring-1 ring-inset ring-brand/20 dark:bg-brand/15";
 
 const collapsedBtn =
-  "flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold transition";
+  "flex h-11 w-11 items-center justify-center rounded-xl text-sm font-semibold transition duration-150";
 const collapsedInactive =
-  "text-zinc-900 hover:bg-neutral-100 hover:text-ink dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-ink";
+  "bg-canvas text-zinc-700 ring-1 ring-inset ring-hairline hover:bg-neutral-100 dark:bg-white/[0.04] dark:text-neutral-300 dark:ring-white/10 dark:hover:bg-white/10";
 const collapsedActive =
   "bg-brand text-white shadow-[0_8px_20px_rgba(44,119,163,0.32)]";
+
+const TopNavIcon = ({ Icon, active, isParentActive }) => (
+  <span
+    className={[
+      "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition",
+      active && !isParentActive
+        ? "bg-white/20 text-white"
+        : isParentActive
+          ? "bg-brand/15 text-brand dark:bg-brand/20"
+          : "bg-canvas text-zinc-600 ring-1 ring-inset ring-hairline dark:bg-white/[0.06] dark:text-neutral-400 dark:ring-white/10",
+    ].join(" ")}
+  >
+    <Icon size={17} strokeWidth={2.2} />
+  </span>
+);
 
 const SubNavLabel = ({ label, compact = false }) => (
   <div
     className={[
-      "px-3 text-[10px] font-extrabold uppercase tracking-[0.12em] text-zinc-900/45 dark:text-neutral-500",
-      compact ? "pb-1 pt-2" : "pb-1 pt-3",
+      "px-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-zinc-900/40 dark:text-neutral-500",
+      compact ? "pb-1 pt-2" : "pb-1 pt-2.5",
     ].join(" ")}
   >
     {label}
@@ -169,18 +187,21 @@ const SubNavButton = ({ sub, active, onClick, compact = false }) => {
       disabled={!sub.to}
       onClick={onClick}
       className={[
-        "flex items-center gap-2.5 rounded-lg text-left font-medium transition",
-        compact ? "px-2 py-1.5 text-[13px]" : "px-3 py-2 text-[13px]",
+        "relative flex items-center gap-2.5 rounded-lg text-left font-medium transition duration-150",
+        compact ? "px-2 py-1.5 text-[13px]" : "px-2.5 py-2 text-[13px]",
         active
-          ? "bg-brand/10 text-brand"
-          : "text-zinc-900 hover:bg-neutral-100 hover:text-ink dark:text-neutral-400 dark:hover:bg-white/10 dark:hover:text-ink",
+          ? "bg-brand/10 font-semibold text-brand"
+          : "text-zinc-700 hover:bg-canvas/90 dark:text-neutral-400 dark:hover:bg-white/[0.06] dark:hover:text-neutral-200",
         !sub.to ? "cursor-not-allowed opacity-50" : "",
       ].join(" ")}
     >
+      {active && (
+        <span className="absolute -left-3 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand" />
+      )}
       <SubIcon
         size={compact ? 15 : 16}
-        strokeWidth={2.1}
-        className="shrink-0"
+        strokeWidth={active ? 2.3 : 2.1}
+        className={["shrink-0", active ? "text-brand" : "opacity-80"].join(" ")}
       />
       <span className="flex-1 truncate">{sub.label}</span>
       {!sub.to && (
@@ -204,6 +225,8 @@ const NavItem = ({ item, collapsed }) => {
   const isActive = hasSub
     ? subItems.some(isSubActive) || isRelatedActive
     : to && pathname === to;
+  const isParentActive = hasSub && isActive;
+  const isLeafActive = isActive && !hasSub;
 
   const [open, setOpen] = useState(isActive);
 
@@ -277,21 +300,28 @@ const NavItem = ({ item, collapsed }) => {
       <button
         type="button"
         onClick={handleTopClick}
-        className={[baseRow, isActive ? activeRow : inactiveRow].join(" ")}
+        className={[
+          baseRow,
+          isLeafActive ? activeLeafRow : isParentActive ? activeParentRow : inactiveRow,
+        ].join(" ")}
       >
-        <Icon size={19} strokeWidth={2.2} />
+        <TopNavIcon Icon={Icon} active={isLeafActive} isParentActive={isParentActive} />
         <span className="flex-1 text-left">{label}</span>
         {hasSub && (
           <ChevronDown
             size={16}
             strokeWidth={2.4}
-            className={["transition", open ? "rotate-180" : ""].join(" ")}
+            className={[
+              "shrink-0 opacity-70 transition",
+              open ? "rotate-180" : "",
+              isParentActive ? "text-brand" : "",
+            ].join(" ")}
           />
         )}
       </button>
 
       {hasSub && open && (
-        <div className="mt-1 flex flex-col gap-0.5 pl-5">
+        <div className="relative mt-1.5 ml-5 flex flex-col gap-0.5 border-l border-hairline pl-3">
           {subItems.map((sub) =>
             sub.type === "label" ? (
               <SubNavLabel key={sub.key} label={sub.label} />
@@ -320,13 +350,16 @@ const Sidebar = ({ collapsed = false }) => {
   return (
     <aside
       className={[
-        "relative z-40 flex h-full shrink-0 flex-col bg-[#FFFFFF] pt-6 pb-5 transition-[width] duration-200 ease-out",
+        "relative z-40 flex h-full shrink-0 flex-col bg-surface pt-6 pb-5 transition-[width] duration-200 ease-out",
         collapsed ? "w-[67px] items-center px-3" : "w-60 overflow-y-auto px-4",
       ].join(" ")}
     >
       <nav className="flex w-full flex-col gap-1">
-        {navItems.map((item) => (
-          <NavItem key={item.key} item={item} collapsed={collapsed} />
+        {navItems.map((item, index) => (
+          <div key={item.key}>
+            {index > 0 && <div className="my-2 h-px bg-hairline" aria-hidden />}
+            <NavItem item={item} collapsed={collapsed} />
+          </div>
         ))}
       </nav>
     </aside>

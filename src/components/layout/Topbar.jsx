@@ -10,6 +10,7 @@ import {
 import ThemeToggle from "../ui/ThemeToggle";
 import { useAuth } from "../../context/AuthContext";
 import { useClientContext } from "../../context/ClientContext";
+import markyticsLogo from "../../assets/markytics-logo.png";
 
 const getInitials = (name) => {
   if (!name) return "SA";
@@ -29,11 +30,13 @@ const Topbar = ({ title = "Overview", search, onSearchChange, collapsed, onToggl
   return (
     <header className="z-50 flex h-16 shrink-0 items-center gap-4 border-b border-hairline bg-surface px-5">
       <div className="flex items-center gap-2.5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-white">
-          <span className="text-sm font-extrabold">V3</span>
-        </div>
+        <img
+          src={markyticsLogo}
+          alt="Markytics"
+          className="h-10 w-10 rounded-xl object-contain"
+        />
         <div className="hidden leading-tight sm:block">
-          <p className="text-sm font-bold text-ink">PlatformV3</p>
+          <p className="text-sm font-bold text-ink">Markytics</p>
           <p className="text-[11px] font-medium text-zinc-900 dark:text-neutral-400">
             {selectedClient
               ? `${accessLabel} · ${selectedClient.name || `Client #${selectedClient.client_id}`}`
@@ -81,14 +84,7 @@ const Topbar = ({ title = "Overview", search, onSearchChange, collapsed, onToggl
 
       <ThemeToggle />
 
-      <button
-        type="button"
-        aria-label="Notifications"
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-zinc-900 transition hover:bg-neutral-100 hover:text-ink dark:text-neutral-400 dark:hover:bg-white/10"
-      >
-        <Bell size={18} strokeWidth={2.2} />
-        <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-brand" />
-      </button>
+
 
       <span className="h-6 w-px bg-hairline" />
 

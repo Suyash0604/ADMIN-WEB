@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus, Info } from "lucide-react";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import { Plus, Search } from "lucide-react";
 import { useResourceManager } from "../../hooks/useResourceManager";
 import { useToast } from "../../context/ToastContext";
 import { useClientContext } from "../../context/ClientContext";
@@ -11,7 +11,6 @@ import Button from "../ui/Button";
 import DataTable from "../ui/DataTable";
 import EmptyState from "../ui/EmptyState";
 import ConfirmDialog from "../ui/ConfirmDialog";
-import Spinner from "../ui/Spinner";
 import ResourceForm from "../rbac/ResourceForm";
 
 const resource = clientResources.clients;
@@ -19,16 +18,22 @@ const resource = clientResources.clients;
 const ClientsListManager = ({ navigateOnCreate = true }) => {
   const toast = useToast();
   const navigate = useNavigate();
+  const { search = "" } = useOutletContext() ?? {};
   const { selectClient } = useClientContext();
 
   const {
     records,
     loading,
     syncing,
+    page,
+    pagination,
+    setPage,
     create,
     update,
     remove,
-  } = useResourceManager(resource, null);
+  } = useResourceManager(resource, null, { search });
+
+  const isSearching = search.trim().length > 0;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -86,23 +91,13 @@ const ClientsListManager = ({ navigateOnCreate = true }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 py-24">
-        <Spinner size={24} />
-        <p className="text-sm font-semibold text-zinc-900/70 dark:text-neutral-400">
-          Loading clients…
-        </p>
-      </div>
-    );
-  }
+  const tableLoading = loading || syncing;
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         icon={resource.icon}
         title={resource.title}
-        description="Create a client, then click it to manage legal documents, product channels, and calling config."
         actions={
           <Button icon={Plus} onClick={openCreate}>
             New Client
@@ -110,15 +105,21 @@ const ClientsListManager = ({ navigateOnCreate = true }) => {
         }
       />
 
-      {records.length === 0 ? (
+      {records.length === 0 && !tableLoading ? (
         <EmptyState
-          icon={resource.icon}
-          title="No clients yet"
-          description="Create your first client to get started."
+          icon={isSearching ? Search : resource.icon}
+          title={isSearching ? "No records match" : "No clients yet"}
+          description={
+            isSearching
+              ? "Try a different search term."
+              : "Create your first client to get started."
+          }
           action={
-            <Button icon={Plus} onClick={openCreate}>
-              New Client
-            </Button>
+            isSearching ? undefined : (
+              <Button icon={Plus} onClick={openCreate}>
+                New Client
+              </Button>
+            )
           }
         />
       ) : (
@@ -126,11 +127,19 @@ const ClientsListManager = ({ navigateOnCreate = true }) => {
           columns={resource.columns}
           rows={records}
           idKey={resource.idKey}
-          loading={syncing}
+          loading={tableLoading}
           onRowClick={openClientWorkspace}
           clickableColumnKey="name"
           onEdit={openEdit}
           onDelete={(row) => setDeleting(row)}
+          pagination={{
+            page,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            totalPages: pagination.totalPages,
+            onPageChange: setPage,
+            loading: tableLoading,
+          }}
         />
       )}
 

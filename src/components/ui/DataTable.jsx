@@ -1,4 +1,6 @@
 import { Pencil, Trash2, ExternalLink, ChevronRight } from "lucide-react";
+import TablePagination from "./TablePagination";
+import { TableLoadingOverlay, TableSkeletonRows } from "./TableLoading";
 
 const resolveCell = (row, col) => {
   if (col.accessor) return col.accessor(row);
@@ -66,16 +68,23 @@ const DataTable = ({
   onDelete,
   onRowClick,
   clickableColumnKey,
+  pagination,
 }) => {
   const hasActions = Boolean(onEdit || onDelete);
   const isClickable = Boolean(onRowClick);
+  const columnCount = columns.length + (hasActions ? 1 : 0);
+  const showSkeleton = loading && rows.length === 0;
+  const showOverlay = loading && rows.length > 0;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-hairline bg-surface shadow-[0_8px_30px_rgba(13,13,13,0.06)]">
-      <div className="relative overflow-x-auto">
-        {loading && (
-          <div className="pointer-events-none absolute inset-0 z-10 bg-surface/55 backdrop-blur-[1px]" />
-        )}
+      <div
+        className={[
+          "relative overflow-x-auto",
+          showSkeleton ? "min-h-[280px]" : "",
+        ].join(" ")}
+      >
+        {showOverlay && <TableLoadingOverlay />}
 
         <table className="w-full min-w-[720px] border-collapse text-left text-sm">
           <thead>
@@ -97,7 +106,10 @@ const DataTable = ({
           </thead>
 
           <tbody className="divide-y divide-hairline/80">
-            {rows.map((row, rowIndex) => (
+            {showSkeleton ? (
+              <TableSkeletonRows columnCount={columnCount} />
+            ) : (
+            rows.map((row, rowIndex) => (
               <tr
                 key={row[idKey]}
                 onClick={isClickable ? () => onRowClick(row) : undefined}
@@ -199,10 +211,12 @@ const DataTable = ({
                   </td>
                 )}
               </tr>
-            ))}
+            ))
+            )}
           </tbody>
         </table>
       </div>
+      {pagination ? <TablePagination {...pagination} /> : null}
     </div>
   );
 };

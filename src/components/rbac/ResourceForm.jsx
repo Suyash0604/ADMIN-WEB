@@ -3,6 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
+import Select from "../ui/Select";
 import FormField from "../ui/FormField";
 import BooleanToggle from "../ui/BooleanToggle";
 import MasterDocumentSelect from "../client/MasterDocumentSelect";
@@ -275,6 +276,24 @@ const ResourceForm = ({
         );
       case "client":
         return <ClientSelect {...common} />;
+      case "select":
+        return (
+          <Select
+            id={field.name}
+            value={values[field.name] ?? ""}
+            invalid={Boolean(errors[field.name])}
+            onChange={(e) => setField(field.name, e.target.value)}
+          >
+            <option value="" disabled>
+              {field.placeholder ?? "Select an option"}
+            </option>
+            {(field.options ?? []).map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        );
       case "masterDocument":
         return <MasterDocumentSelect {...common} />;
       case "product":

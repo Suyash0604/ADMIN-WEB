@@ -40,6 +40,12 @@ const providerColumn = {
       : r.provider_id,
 };
 
+const providerTypeOptions = [
+  { value: "LLM", label: "LLM — Large language model" },
+  { value: "STT", label: "STT — Speech to text" },
+  { value: "TTS", label: "TTS — Text to speech" },
+];
+
 export const aiResources = {
   providers: {
     key: "providers",
@@ -64,10 +70,10 @@ export const aiResources = {
       {
         name: "provider_type",
         label: "Provider type",
-        type: "text",
+        type: "select",
         required: true,
-        placeholder: "llm, stt, or tts",
-        help: "Category of the provider, e.g. llm, stt, tts.",
+        placeholder: "Select provider type",
+        options: providerTypeOptions,
       },
     ],
     columns: [

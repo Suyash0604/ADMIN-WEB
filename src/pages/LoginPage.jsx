@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Eye, EyeOff, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import ThemeToggle from "../components/ui/ThemeToggle";
 import { useAuth } from "../context/AuthContext";
+import markyticsLogo from "../assets/markytics-logo.png";
 
 const LoginPage = () => {
   const { login } = useAuth();
@@ -44,11 +45,13 @@ const LoginPage = () => {
       </div>
 
       <div className="absolute left-6 top-6 z-10 flex items-center gap-2.5 rounded-2xl border border-white/50 bg-white/45 px-3 py-2 shadow-[0_8px_24px_rgba(44,119,163,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.06]">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand text-white shadow-[0_6px_16px_rgba(44,119,163,0.35)]">
-          <span className="text-sm font-extrabold">V3</span>
-        </div>
+        <img
+          src={markyticsLogo}
+          alt="Markytics"
+          className="h-9 w-9 rounded-xl object-contain"
+        />
         <span className="text-sm font-bold text-ink">
-          PlatformV3 <span className="text-brand">Admin</span>
+          Markytics <span className="text-brand">Admin</span>
         </span>
       </div>
 
@@ -154,8 +157,13 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <p className="mt-6 rounded-full border border-white/40 bg-white/35 px-4 py-2 text-xs font-medium text-zinc-900/70 shadow-[0_4px_16px_rgba(44,119,163,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.05] dark:text-neutral-400">
+        <p className="mt-6 flex items-center gap-2 rounded-full border border-white/40 bg-white/35 px-4 py-2 text-xs font-medium text-zinc-900/70 shadow-[0_4px_16px_rgba(44,119,163,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-white/[0.05] dark:text-neutral-400">
           A product by <span className="font-bold text-ink">Markytics.AI</span>
+          <img
+            src={markyticsLogo}
+            alt="Markytics"
+            className="h-5 w-5 rounded object-contain"
+          />
         </p>
       </div>
     </div>

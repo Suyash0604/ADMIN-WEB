@@ -18,6 +18,7 @@ import {
 
 const timestampColumns = [
   { key: "created_at", label: "Created", type: "date" },
+  { key: "updated_at", label: "Updated", type: "date" },
   { key: "is_deleted", label: "Status", type: "status" },
 ];
 
@@ -74,6 +75,7 @@ export const rbacResources = {
         label: "Reporting manager",
         type: "user",
         placeholder: "Choose reporting manager",
+        getValue: (r) => r?.reporting_manager_id,
       },
       { name: "client_id", label: "Client", type: "client", clientDefault: true },
       {
@@ -81,16 +83,18 @@ export const rbacResources = {
         label: "Designation",
         type: "designation",
         required: true,
-        createOnly: true,
         placeholder: "Choose designation",
+        getValue: (r) =>
+          r?.designation_id ?? r?.designations?.[0]?.designation_id,
       },
       {
         name: "location_id",
         label: "Location",
         type: "buLocation",
         required: true,
-        createOnly: true,
         placeholder: "Choose work location",
+        getValue: (r) =>
+          r?.location_id ?? r?.locations?.[0]?.location_id,
       },
     ],
     columns: [

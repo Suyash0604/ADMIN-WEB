@@ -191,7 +191,6 @@ export const clientResources = {
     ],
     columns: [
       { key: "id", label: "ID" },
-      { key: "client_id", label: "Client" },
       {
         key: "master_id",
         label: "Master doc",
@@ -235,19 +234,11 @@ export const clientResources = {
         defaultValue: true,
         booleanLabels: { true: "Mandatory", false: "Optional" },
       },
-      {
-        name: "description",
-        label: "Description",
-        type: "textarea",
-        placeholder: "Brief description of this document type",
-      },
     ],
     columns: [
       { key: "id", label: "ID" },
       { key: "document_name", label: "Name" },
       { key: "mandatory", label: "Mandatory", type: "boolean" },
-      { key: "description", label: "Description" },
-      ...timestampColumns,
     ],
   },
 

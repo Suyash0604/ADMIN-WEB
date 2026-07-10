@@ -1,12 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
+import { DEFAULT_PAGINATION } from "../lib/constants";
+import { filterRecordsBySearch } from "../lib/recordSearch";
 
 /**
  * Loads and manages records for a resource page.
  *
  * Simple flow:
  *   1. Page passes `resource` config + logged-in `clientId`
- *   2. On mount → calls api.list() or api.listByClient(clientId)
+ *   2. On mount → calls api.list() or api.listByClient(clientId) with pagination
  *   3. Returns records + create/update/remove helpers
  */
 
@@ -30,16 +32,33 @@ const writeCache = (resourceKey, records) => {
   }
 };
 
-const toRows = (data) => {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.items)) return data.items;
-  return [];
+const parseListResponse = (data) => {
+  if (Array.isArray(data)) {
+    return {
+      items: data,
+      total: data.length,
+      page: 1,
+      pageSize: data.length || DEFAULT_PAGINATION.page_size,
+      totalPages: 1,
+    };
+  }
+
+  const items = Array.isArray(data?.items) ? data.items : [];
+  const pageSize = data?.page_size ?? DEFAULT_PAGINATION.page_size;
+
+  return {
+    items,
+    total: data?.total ?? items.length,
+    page: data?.page ?? 1,
+    pageSize,
+    totalPages: data?.total_pages ?? Math.max(1, Math.ceil((data?.total ?? items.length) / pageSize)),
+  };
 };
 
 const isAbortError = (error) =>
   axios.isCancel(error) || error?.code === "ERR_CANCELED";
 
-export const useResourceManager = (resource, clientId) => {
+export const useResourceManager = (resource, clientId, { search = "" } = {}) => {
   const {
     key: resourceKey,
     idKey,
@@ -47,29 +66,43 @@ export const useResourceManager = (resource, clientId) => {
     hasList,
     filterByClient,
     filterClientId,
+    columns = [],
   } = resource;
+
+  const searchQuery = search.trim();
 
   const useClientSideFilter = filterByClient && typeof filterClientId === "function";
   const useServerClientFilter = filterByClient && !useClientSideFilter;
 
   const canLoad = hasList && (!filterByClient || clientId != null);
 
-  const [records, setRecords] = useState(() =>
+  const [rawRecords, setRawRecords] = useState(() =>
     hasList ? [] : readCache(resourceKey),
   );
   const [loading, setLoading] = useState(canLoad);
   const [syncing, setSyncing] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    pageSize: DEFAULT_PAGINATION.page_size,
+    totalPages: 1,
+  });
+  const [reloadKey, setReloadKey] = useState(0);
   const requestIdRef = useRef(0);
+
+  const reload = useCallback(() => {
+    setReloadKey((key) => key + 1);
+  }, []);
 
   const persist = useCallback(
     (updater) => {
       if (hasList) {
-        setRecords((prev) =>
+        setRawRecords((prev) =>
           typeof updater === "function" ? updater(prev) : updater,
         );
         return;
       }
-      setRecords((prev) => {
+      setRawRecords((prev) => {
         const next = typeof updater === "function" ? updater(prev) : updater;
         writeCache(resourceKey, next);
         return next;
@@ -91,10 +124,22 @@ export const useResourceManager = (resource, clientId) => {
     [idKey, persist],
   );
 
-  // ── Load list on mount ──────────────────────────────────────────
+  useEffect(() => {
+    setPage(1);
+    if (hasList) {
+      setRawRecords([]);
+      setLoading(canLoad);
+    }
+  }, [canLoad, clientId, hasList, resourceKey]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery]);
+
+  // ── Load paginated list ─────────────────────────────────────────
   useEffect(() => {
     if (!hasList) {
-      setRecords(readCache(resourceKey));
+      setRawRecords(readCache(resourceKey));
       return undefined;
     }
 
@@ -105,23 +150,38 @@ export const useResourceManager = (resource, clientId) => {
 
     const requestId = ++requestIdRef.current;
     const controller = new AbortController();
-    const opts = { signal: controller.signal };
+    const paginationParams = {
+      page,
+      page_size: DEFAULT_PAGINATION.page_size,
+      ...(searchQuery ? { search: searchQuery } : {}),
+    };
 
-    setLoading(true);
     setSyncing(true);
 
     const fetcher = useServerClientFilter
-      ? api.listByClient(clientId, opts)
-      : api.list({}, opts);
+      ? api.listByClient(clientId, {
+          signal: controller.signal,
+          params: paginationParams,
+        })
+      : api.list(paginationParams, { signal: controller.signal });
 
     fetcher
       .then((data) => {
         if (requestId !== requestIdRef.current) return;
-        let rows = toRows(data);
+
+        const parsed = parseListResponse(data);
+        let rows = parsed.items;
+
         if (useClientSideFilter && clientId != null) {
           rows = rows.filter((row) => filterClientId(row) === clientId);
         }
-        setRecords(rows);
+
+        setRawRecords(rows);
+        setPagination({
+          total: parsed.total,
+          pageSize: parsed.pageSize,
+          totalPages: parsed.totalPages,
+        });
       })
       .catch((error) => {
         if (isAbortError(error) || requestId !== requestIdRef.current) return;
@@ -137,32 +197,71 @@ export const useResourceManager = (resource, clientId) => {
       requestIdRef.current += 1;
       controller.abort();
     };
-  }, [api, canLoad, clientId, filterByClient, filterClientId, hasList, resourceKey, useClientSideFilter, useServerClientFilter]);
+  }, [
+    api,
+    canLoad,
+    clientId,
+    filterClientId,
+    hasList,
+    page,
+    reloadKey,
+    resourceKey,
+    searchQuery,
+    useClientSideFilter,
+    useServerClientFilter,
+  ]);
+
+  const records = useMemo(
+    () => filterRecordsBySearch(rawRecords, columns, searchQuery),
+    [columns, rawRecords, searchQuery],
+  );
 
   const create = useCallback(
     async (payload) => {
       const record = await api.create(payload);
-      upsert(record);
+      if (hasList) {
+        if (page !== 1) setPage(1);
+        else reload();
+      } else {
+        upsert(record);
+      }
       return record;
     },
-    [api, upsert],
+    [api, hasList, page, reload, upsert],
   );
 
   const update = useCallback(
     async (id, payload) => {
       const record = await api.update(id, payload);
-      upsert(record ?? { [idKey]: id, ...payload });
+      if (hasList) {
+        reload();
+      } else {
+        upsert(record ?? { [idKey]: id, ...payload });
+      }
       return record;
     },
-    [api, idKey, upsert],
+    [api, hasList, idKey, reload, upsert],
   );
 
   const remove = useCallback(
     async (id) => {
       await api.remove(id);
-      persist((prev) => prev.filter((r) => r[idKey] !== id));
+      if (hasList) {
+        const nextTotal = Math.max(0, pagination.total - 1);
+        const nextTotalPages = Math.max(
+          1,
+          Math.ceil(nextTotal / pagination.pageSize),
+        );
+        if (page > nextTotalPages) {
+          setPage(nextTotalPages);
+        } else {
+          reload();
+        }
+      } else {
+        persist((prev) => prev.filter((r) => r[idKey] !== id));
+      }
     },
-    [api, idKey, persist],
+    [api, hasList, idKey, page, pagination.pageSize, pagination.total, persist, reload],
   );
 
   const fetchById = useCallback(
@@ -178,6 +277,9 @@ export const useResourceManager = (resource, clientId) => {
     records,
     loading,
     syncing,
+    page,
+    pagination,
+    setPage,
     missingClientId: filterByClient && clientId == null,
     create,
     update,

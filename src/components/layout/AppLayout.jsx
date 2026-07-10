@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
@@ -17,6 +17,10 @@ const AppLayout = () => {
   const [search, setSearch] = useState("");
   const [collapsed, setCollapsed] = useState(true);
   const { pathname } = useLocation();
+
+  useEffect(() => {
+    setSearch("");
+  }, [pathname]);
 
   return (
     <div className="flex h-screen flex-col bg-canvas text-ink">
