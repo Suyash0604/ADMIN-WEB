@@ -46,6 +46,12 @@ const providerTypeOptions = [
   { value: "TTS", label: "TTS — Text to speech" },
 ];
 
+const genderOptions = [
+  { value: "female", label: "Female" },
+  { value: "male", label: "Male" },
+  { value: "neutral", label: "Neutral" },
+];
+
 export const aiResources = {
   providers: {
     key: "providers",
@@ -217,7 +223,13 @@ export const aiResources = {
         type: "text",
         placeholder: "Provider-specific voice ID",
       },
-      { name: "gender", label: "Gender", type: "text", placeholder: "female" },
+      {
+        name: "gender",
+        label: "Gender",
+        type: "select",
+        placeholder: "Select gender",
+        options: genderOptions,
+      },
       {
         name: "sample_rate",
         label: "Sample rate (Hz)",

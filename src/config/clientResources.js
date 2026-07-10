@@ -192,12 +192,12 @@ export const clientResources = {
     columns: [
       { key: "id", label: "ID" },
       {
-        key: "master_id",
+        key: "document_name",
         label: "Master doc",
         accessor: (r) =>
-          r.master_document?.document_name
-            ? `${r.master_document.document_name} (#${r.master_id})`
-            : r.master_id,
+          r.document_name ??
+          r.master_document?.document_name ??
+          r.master_id,
       },
       { key: "original_filename", label: "Filename" },
       { key: "document_url", label: "Document", type: "link" },
