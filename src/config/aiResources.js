@@ -49,7 +49,6 @@ const providerTypeOptions = [
 const genderOptions = [
   { value: "female", label: "Female" },
   { value: "male", label: "Male" },
-  { value: "neutral", label: "Neutral" },
 ];
 
 export const aiResources = {
