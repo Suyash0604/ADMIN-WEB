@@ -114,18 +114,7 @@ export const request = async (
   const response = await http.request(config);
   const payload = response.data;
 
-  // Prefer unwrapping { message, data } envelopes from client platform APIs.
-  if (
-    payload &&
-    typeof payload === "object" &&
-    !Array.isArray(payload) &&
-    "data" in payload &&
-    "message" in payload
-  ) {
-    return payload.data;
-  }
-
-  return payload;
+  return payload?.data ?? payload;
 };
 
 export const apiClient = {
