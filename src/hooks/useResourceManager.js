@@ -32,7 +32,18 @@ const writeCache = (resourceKey, records) => {
   }
 };
 
-const parseListResponse = (data) => {
+const parseListResponse = (payload) => {
+  // Support both flat and wrapped list shapes:
+  // { items, page, ... }  OR  { message, data: { items, page, ... } }
+  const data =
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    payload.data != null &&
+    (Array.isArray(payload.data) || Array.isArray(payload.data.items))
+      ? payload.data
+      : payload;
+
   if (Array.isArray(data)) {
     return {
       items: data,
@@ -51,8 +62,25 @@ const parseListResponse = (data) => {
     total: data?.total ?? items.length,
     page: data?.page ?? 1,
     pageSize,
-    totalPages: data?.total_pages ?? Math.max(1, Math.ceil((data?.total ?? items.length) / pageSize)),
+    totalPages:
+      data?.total_pages ??
+      Math.max(1, Math.ceil((data?.total ?? items.length) / pageSize)),
   };
+};
+
+const unwrapRecord = (payload) => {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    payload.data != null &&
+    typeof payload.data === "object" &&
+    !Array.isArray(payload.data) &&
+    !Array.isArray(payload.data.items)
+  ) {
+    return payload.data;
+  }
+  return payload;
 };
 
 const isAbortError = (error) =>
@@ -218,7 +246,7 @@ export const useResourceManager = (resource, clientId, { search = "" } = {}) => 
 
   const create = useCallback(
     async (payload) => {
-      const record = await api.create(payload);
+      const record = unwrapRecord(await api.create(payload));
       if (hasList) {
         if (page !== 1) setPage(1);
         else reload();
@@ -232,7 +260,7 @@ export const useResourceManager = (resource, clientId, { search = "" } = {}) => 
 
   const update = useCallback(
     async (id, payload) => {
-      const record = await api.update(id, payload);
+      const record = unwrapRecord(await api.update(id, payload));
       if (hasList) {
         reload();
       } else {
@@ -266,7 +294,7 @@ export const useResourceManager = (resource, clientId, { search = "" } = {}) => 
 
   const fetchById = useCallback(
     async (id) => {
-      const record = await api.get(id);
+      const record = unwrapRecord(await api.get(id));
       upsert(record);
       return record;
     },

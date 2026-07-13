@@ -1,140 +1,8 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import {
-  LayoutDashboard,
-  ShieldCheck,
-  Building2,
-  Sparkles,
-  ChevronDown,
-} from "lucide-react";
-import { entities, SERVICES, clientNavGroups } from "../../data/schema";
-import { ROUTES } from "../../lib/constants";
-import {
-  CLIENT_ONBOARDING_ENTITIES,
-  CLIENT_SCOPED_ENTITIES,
-  RBAC_ENTITIES,
-} from "../../lib/accessControl";
-import { routeForEntity } from "../../lib/navigation";
+import { ChevronDown } from "lucide-react";
+import { buildNavItems } from "../../lib/navItems";
 import { useAuth } from "../../context/AuthContext";
-
-const withRoutes = (items) =>
-  items.map((item) => ({
-    ...item,
-    type: "item",
-    to: routeForEntity(item.key),
-    label: item.navLabel ?? item.label,
-  }));
-
-const entityByKey = Object.fromEntries(entities.map((e) => [e.key, e]));
-
-const buildClientSubItems = (
-  canAccessEntity,
-  { hideClientConfig = false } = {},
-) => {
-  const items = [];
-
-  if (canAccessEntity("clients")) {
-    items.push(...withRoutes([entityByKey.clients]));
-  }
-
-  clientNavGroups.forEach((group) => {
-    if (hideClientConfig && group.key === "client-config") return;
-
-    const groupItems = withRoutes(
-      group.keys.map((key) => entityByKey[key]).filter(Boolean),
-    ).filter((item) => canAccessEntity(item.key));
-
-    if (groupItems.length === 0) return;
-
-    items.push({ type: "label", key: group.key, label: group.label });
-    items.push(...groupItems);
-  });
-
-  return items;
-};
-
-const buildNavItems = (canAccessEntity, isClientOnboardingUser, isRbacUser) => {
-  if (isClientOnboardingUser) {
-    return [
-      {
-        key: "onboarding",
-        label: "Client Onboarding",
-        icon: Building2,
-        subItems: withRoutes(
-          CLIENT_ONBOARDING_ENTITIES.map((key) => entityByKey[key]).filter(
-            Boolean,
-          ),
-        ),
-      },
-    ];
-  }
-
-  if (isRbacUser) {
-    const rbacSubItems = withRoutes(
-      RBAC_ENTITIES.map((key) => entityByKey[key]).filter(Boolean),
-    );
-    return [
-      {
-        key: "rbac",
-        label: "RBAC",
-        icon: ShieldCheck,
-        subItems: rbacSubItems,
-      },
-    ];
-  }
-
-  const items = [
-    {
-      key: "overview",
-      label: "Overview",
-      icon: LayoutDashboard,
-      to: ROUTES.overview,
-    },
-  ];
-
-  const clientSubItems = buildClientSubItems(canAccessEntity, {
-    hideClientConfig: true,
-  });
-  if (clientSubItems.length > 0) {
-    items.push({
-      key: "client",
-      label: "Client",
-      icon: Building2,
-      subItems: clientSubItems,
-      relatedRoutes: CLIENT_SCOPED_ENTITIES.map((key) =>
-        routeForEntity(key),
-      ).filter(Boolean),
-    });
-  }
-
-  const rbacSubItems = withRoutes(
-    entities.filter((e) => e.service === SERVICES.RBAC),
-  ).filter((item) => canAccessEntity(item.key));
-
-  if (rbacSubItems.length > 0) {
-    items.push({
-      key: "rbac",
-      label: "RBAC",
-      icon: ShieldCheck,
-      subItems: rbacSubItems,
-    });
-  }
-
-  const aiSubItems = withRoutes(
-    entities.filter((e) => e.service === SERVICES.AI),
-  ).filter((item) => canAccessEntity(item.key));
-
-  if (aiSubItems.length > 0) {
-    items.push({
-      key: "ai",
-      label: "AI Services",
-      icon: Sparkles,
-      subItems: aiSubItems,
-    });
-  }
-
-  return items;
-};
 
 const baseRow =
   "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition duration-150";
@@ -302,10 +170,18 @@ const NavItem = ({ item, collapsed }) => {
         onClick={handleTopClick}
         className={[
           baseRow,
-          isLeafActive ? activeLeafRow : isParentActive ? activeParentRow : inactiveRow,
+          isLeafActive
+            ? activeLeafRow
+            : isParentActive
+              ? activeParentRow
+              : inactiveRow,
         ].join(" ")}
       >
-        <TopNavIcon Icon={Icon} active={isLeafActive} isParentActive={isParentActive} />
+        <TopNavIcon
+          Icon={Icon}
+          active={isLeafActive}
+          isParentActive={isParentActive}
+        />
         <span className="flex-1 text-left">{label}</span>
         {hasSub && (
           <ChevronDown
@@ -350,7 +226,7 @@ const Sidebar = ({ collapsed = false }) => {
   return (
     <aside
       className={[
-        "relative z-40 flex h-full shrink-0 flex-col bg-surface pt-6 pb-5 transition-[width] duration-200 ease-out",
+        "relative z-40 hidden h-full shrink-0 flex-col bg-surface pt-6 pb-5 transition-[width] duration-200 ease-out md:flex",
         collapsed ? "w-[67px] items-center px-3" : "w-60 overflow-y-auto px-4",
       ].join(" ")}
     >

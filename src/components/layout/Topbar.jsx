@@ -49,7 +49,7 @@ const Topbar = ({ title = "Overview", search, onSearchChange, collapsed, onToggl
         type="button"
         onClick={onToggleSidebar}
         aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="ml-1 flex h-9 w-9 items-center justify-center rounded-lg text-zinc-900 transition hover:bg-neutral-100 hover:text-ink dark:text-neutral-400 dark:hover:bg-white/10"
+        className="ml-1 hidden h-9 w-9 items-center justify-center rounded-lg text-zinc-900 transition hover:bg-neutral-100 hover:text-ink md:flex dark:text-neutral-400 dark:hover:bg-white/10"
       >
         {collapsed ? (
           <PanelLeft size={18} strokeWidth={2.2} />
@@ -58,9 +58,9 @@ const Topbar = ({ title = "Overview", search, onSearchChange, collapsed, onToggl
         )}
       </button>
 
-      <div className="hidden items-center gap-2 sm:flex">
-        <span className="h-5 w-px bg-hairline" />
-        <span className="text-sm font-semibold text-ink">{title}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className="hidden h-5 w-px bg-hairline sm:block" />
+        <span className="truncate text-sm font-semibold text-ink">{title}</span>
       </div>
 
       <div className="relative ml-auto">
@@ -76,7 +76,7 @@ const Topbar = ({ title = "Overview", search, onSearchChange, collapsed, onToggl
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Search records"
-              className="h-10 w-56 rounded-lg border border-hairline bg-canvas pl-10 pr-3 text-sm font-medium text-ink outline-none transition placeholder:text-zinc-900 dark:placeholder:text-neutral-500 focus:w-72 focus:border-brand/40 focus:bg-surface focus:ring-2 focus:ring-brand/15"
+              className="h-10 w-36 rounded-lg border border-hairline bg-canvas pl-10 pr-3 text-sm font-medium text-ink outline-none transition placeholder:text-zinc-900 sm:w-56 dark:placeholder:text-neutral-500 focus:w-44 focus:border-brand/40 focus:bg-surface focus:ring-2 focus:ring-brand/15 sm:focus:w-72"
             />
           </>
         )}
