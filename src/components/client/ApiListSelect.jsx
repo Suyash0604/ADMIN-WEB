@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
+import { toListRows } from "../../lib/apiResponse";
 import Select from "../ui/Select";
 import Spinner from "../ui/Spinner";
-
-export const toListRows = (data) => {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.items)) return data.items;
-  return [];
-};
 
 const ApiListSelect = ({
   id,

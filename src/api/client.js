@@ -12,6 +12,7 @@ export class ApiError extends Error {
 }
 
 const resolveErrorMessage = (data, status) => {
+  if (typeof data?.message === "string" && data.message.trim()) return data.message;
   const detail = data?.detail;
   if (typeof detail === "string") return detail;
   if (Array.isArray(detail) && detail[0]?.msg) return detail[0].msg;
@@ -111,7 +112,20 @@ export const request = async (
   }
 
   const response = await http.request(config);
-  return response.data;
+  const payload = response.data;
+
+  // Prefer unwrapping { message, data } envelopes from client platform APIs.
+  if (
+    payload &&
+    typeof payload === "object" &&
+    !Array.isArray(payload) &&
+    "data" in payload &&
+    "message" in payload
+  ) {
+    return payload.data;
+  }
+
+  return payload;
 };
 
 export const apiClient = {

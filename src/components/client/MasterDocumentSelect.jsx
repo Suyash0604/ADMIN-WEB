@@ -1,14 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { masterDocumentsApi } from "../../api/clientPlatform";
+import { toListRows } from "../../lib/apiResponse";
 import Select from "../ui/Select";
 import Spinner from "../ui/Spinner";
-
-const toRows = (data) => {
-  if (Array.isArray(data)) return data;
-  if (Array.isArray(data?.items)) return data.items;
-  return [];
-};
 
 const MasterDocumentSelect = ({ id, value, onChange, invalid = false }) => {
   const [documents, setDocuments] = useState([]);
@@ -20,7 +15,7 @@ const MasterDocumentSelect = ({ id, value, onChange, invalid = false }) => {
 
     masterDocumentsApi
       .list({}, { signal: controller.signal })
-      .then((data) => setDocuments(toRows(data)))
+      .then((data) => setDocuments(toListRows(data)))
       .catch((err) => {
         if (err?.code === "ERR_CANCELED") return;
         setError(err.message || "Unable to load document types.");

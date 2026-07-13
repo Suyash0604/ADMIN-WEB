@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { usersApi, designationsApi, buLocationsApi } from "../../api/rbac";
-import { toListRows } from "../client/ApiListSelect";
+import { toListRows } from "../../lib/apiResponse";
 import Select from "../ui/Select";
 import Spinner from "../ui/Spinner";
 

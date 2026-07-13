@@ -6,7 +6,8 @@ import {
   providersApi,
   clientProductChannelsApi,
 } from "../../api/clientPlatform";
-import ApiListSelect, { toListRows } from "./ApiListSelect";
+import { toListRows } from "../../lib/apiResponse";
+import ApiListSelect from "./ApiListSelect";
 import { useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import Select from "../ui/Select";
