@@ -10,7 +10,7 @@ import {
 
 /**
  * RBAC list endpoints: GET /api/v1/users/?client_id=1
- * `client_id` comes from the logged-in user (see AuthContext).
+ * `client_id` comes from the RBAC client dropdown (ClientContext.rbacClientId).
  *
  * field:  { name, label, type, required, placeholder, help, createOnly, clientDefault }
  * column: { key, label, type }   type: "date" | "status" | (default text)

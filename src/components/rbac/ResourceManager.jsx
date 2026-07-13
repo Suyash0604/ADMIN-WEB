@@ -4,10 +4,14 @@ import { Plus, Search, Info } from "lucide-react";
 import { useResourceManager } from "../../hooks/useResourceManager";
 import { useToast } from "../../context/ToastContext";
 import { useClientContext } from "../../context/ClientContext";
-import { CLIENT_SCOPED_ENTITIES } from "../../lib/accessControl";
+import {
+  CLIENT_SCOPED_ENTITIES,
+  RBAC_ENTITIES,
+} from "../../lib/accessControl";
 import SelectedClientBanner from "../client/SelectedClientBanner";
 import SelectClientPrompt from "../client/SelectClientPrompt";
 import ClientWorkspaceNav from "../client/ClientWorkspaceNav";
+import { ClientSelect } from "../client/CatalogSelects";
 import PageHeader from "../ui/PageHeader";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
@@ -19,9 +23,19 @@ import ResourceForm from "./ResourceForm";
 const ResourceManager = ({ resource }) => {
   const toast = useToast();
   const { search = "" } = useOutletContext() ?? {};
-  const { activeClientId, selectedClient } = useClientContext();
+  const {
+    activeClientId,
+    selectedClient,
+    rbacClientId,
+    setRbacClientId,
+  } = useClientContext();
 
   const isClientScoped = CLIENT_SCOPED_ENTITIES.includes(resource.key);
+  const isRbacPage = RBAC_ENTITIES.includes(resource.key);
+
+  // Workspace pages → selected client. RBAC pages → RBAC client dropdown.
+  const clientId = isClientScoped ? activeClientId : isRbacPage ? rbacClientId : null;
+
   const needsClientSelection =
     isClientScoped && resource.key !== "clients" && !activeClientId;
 
@@ -37,7 +51,7 @@ const ResourceManager = ({ resource }) => {
     update,
     remove,
     fetchById,
-  } = useResourceManager(resource, activeClientId, { search });
+  } = useResourceManager(resource, clientId, { search });
 
   const isSearching = search.trim().length > 0;
 
@@ -123,6 +137,25 @@ const ResourceManager = ({ resource }) => {
         }
       />
 
+      {isRbacPage && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-hairline bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold text-ink">Client</p>
+            <p className="text-xs font-medium text-zinc-900/60 dark:text-neutral-500">
+              Records are loaded for the selected client.
+            </p>
+          </div>
+          <div className="w-full sm:max-w-xs">
+            <ClientSelect
+              id={`${resource.key}-rbac-client`}
+              value={rbacClientId != null ? String(rbacClientId) : ""}
+              onChange={setRbacClientId}
+              placeholder="Select a client"
+            />
+          </div>
+        </div>
+      )}
+
       {selectedClient && isClientScoped && (
         <>
           <SelectedClientBanner client={selectedClient} />
@@ -138,8 +171,9 @@ const ResourceManager = ({ resource }) => {
             className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400"
           />
           <span>
-            Your session has no client ID, so records cannot be loaded. Sign in
-            again or contact an administrator.
+            {isRbacPage
+              ? "Select a client above to load records."
+              : "Your session has no client ID, so records cannot be loaded. Sign in again or contact an administrator."}
           </span>
         </div>
       )}
@@ -257,7 +291,7 @@ const ResourceManager = ({ resource }) => {
           }}
           resource={resource}
           record={editing}
-          defaultClientId={activeClientId}
+          defaultClientId={clientId}
           onSubmit={handleSubmit}
         />
       )}

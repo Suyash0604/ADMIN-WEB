@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
   user: "auth_user",
   theme: "theme",
   selectedClient: "selected_client",
+  rbacClientId: "rbac_client_id",
 };
 
 export const ROUTES = {
